@@ -17,12 +17,10 @@ AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_REGION = os.getenv("AWS_REGION", "eu-central-1")
 
-# Geçmiş alertler
 all_alerts = []
 last_scan_time = None
 
 def background_monitor():
-    """Arka planda her 5 dakikada bir tara"""
     global all_alerts, last_scan_time
     while True:
         try:
@@ -33,8 +31,6 @@ def background_monitor():
                 new_alerts = results["alerts"]
                 all_alerts = (new_alerts + all_alerts)[:100]
                 process_alerts(new_alerts)
-
-                # Canlı bildirim gönder
                 socketio.emit("new_alerts", {"alerts": new_alerts, "count": len(new_alerts)})
                 print(f"🚨 {len(new_alerts)} yeni alert!")
 
@@ -44,7 +40,7 @@ def background_monitor():
         except Exception as e:
             print(f"❌ Arka plan tarama hatası: {e}")
 
-        time.sleep(300)  # 5 dakika bekle
+        time.sleep(300)
 
 @app.route("/")
 def index():
@@ -83,8 +79,7 @@ def on_connect():
     print("🔌 Client bağlandı")
 
 if __name__ == "__main__":
-    # Arka plan monitörünü başlat
     monitor_thread = threading.Thread(target=background_monitor, daemon=True)
     monitor_thread.start()
     print("⚡ CloudSentinel başlatıldı — arka plan monitörü aktif")
-    socketio.run(app, debug=True, port=5053, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", debug=True, port=5053, allow_unsafe_werkzeug=True)
