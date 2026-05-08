@@ -1,12 +1,31 @@
-version: '3.8'
-
 services:
-  cloudsentinel:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: cloudsentinel
+      POSTGRES_PASSWORD: cloudsentinel123
+      POSTGRES_DB: cloudsentinel
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudsentinel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
     build: .
     ports:
       - "5053:5053"
     env_file:
       - .env
+    environment:
+      - DATABASE_URL=postgresql://cloudsentinel:cloudsentinel123@db:5432/cloudsentinel
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
-    volumes:
-      - ./logs:/app/logs
+
+volumes:
+  postgres_data:
